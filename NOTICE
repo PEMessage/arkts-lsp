@@ -1,0 +1,42 @@
+# NOTICE
+
+This repository contains **tooling only** (an extractor and a launcher),
+released under the MIT license (see `LICENSE`). It does **not** include any LSP
+proxy source: it depends on the upstream MIT-licensed `arkts-lsp-proxy` npm
+package and runs it unmodified.
+
+It does **not** contain, and must not be used to redistribute in source form,
+any Huawei proprietary software. The extractor produces a bundle of files
+(`ace-server`) that originate from **DevEco Studio**, which is:
+
+  Copyright (c) Huawei Technologies Co., Ltd.
+  Distributed under Huawei's own commercial license terms.
+
+## What is `ace-server`?
+
+`ace-server` is the ArkTS/ArkUI language server that Huawei ships inside
+DevEco Studio. It is a bundled Node.js application (not Java), located at
+`plugins/openharmony/ace-server/` in a DevEco Studio installation. It is
+Huawei proprietary code.
+
+This project does **not** re-implement it and does **not** claim any rights
+over it. The extractor merely copies that directory out of a DevEco Studio
+installation that the user already has, so it can be run without the full IDE.
+Release artifacts that contain `ace-server` are derivative redistributions of
+Huawei software and remain subject to Huawei's terms; they are provided on a
+best-effort basis for interoperability only. Users are responsible for
+ensuring they have the right to use DevEco Studio and the HarmonyOS SDK.
+
+## Attribution
+
+The language-server proxying in this project is provided by the MIT-licensed
+[HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)
+package (`arkts-lsp-proxy` on npm), used unmodified as a runtime dependency.
+This repository does not vendor or modify that code; it only prepares the
+environment that package expects and launches it. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the full upstream notice.
+
+The Linux porting notes in
+[alex3236/devecostudio-linux](https://github.com/alex3236/devecostudio-linux)
+(BSD-2-Clause) informed the understanding that `ace-server` is cross-platform
+Node.js. No code from that project is included.

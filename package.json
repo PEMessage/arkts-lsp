@@ -1,0 +1,41 @@
+{
+  "name": "arkts-lsp",
+  "version": "0.2.0",
+  "description": "One-click standalone ArkTS language server: composes DevEco Studio's extracted ace-server with the official HarmonyOS command-line tools and the upstream arkts-lsp-proxy",
+  "license": "MIT",
+  "bin": {
+    "arkts-lsp": "bin/arkts-lsp.mjs",
+    "arkts-lsp-extract": "extractor/extract-ace-server.mjs"
+  },
+  "files": [
+    "bin/",
+    "extractor/",
+    "NOTICE",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "extract": "node extractor/extract-ace-server.mjs"
+  },
+  "keywords": [
+    "arkts",
+    "arkui",
+    "harmonyos",
+    "openharmony",
+    "deveco",
+    "lsp",
+    "language-server"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arkts-lsp/arkts-lsp.git"
+  },
+  "dependencies": {
+    "arkts-lsp-proxy": "^0.1.8"
+  }
+}

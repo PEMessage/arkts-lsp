@@ -1,0 +1,24 @@
+# Build output
+/dist/
+node_modules/
+
+# Extractor / release output
+/dist-ace-server/
+/dist-assets/
+*.tar.gz
+*.tgz
+
+# Fetched sources (DevEco / command-line tools)
+/vendor/
+/prebuilts/
+/downloads/
+
+# Local test scratch
+/tmp/
+/.cache/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
