@@ -6,16 +6,18 @@ it unmodified.
 
 ---
 
-## arkts-lsp-proxy (npm runtime dependency)
+## arkts-lsp-proxy (vendored fork, git submodule)
 
-- Source: https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy
-- Package: `arkts-lsp-proxy` on npm (pinned in `package.json` as `^0.1.8`)
-- License: MIT
+- Upstream: https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy
+- Fork: https://github.com/PEMessage/harmony_arkts_lsp_proxy
+- Location: `vendor/harmony_arkts_lsp_proxy` (git submodule), built to `dist/`
+- License: MIT (inherited from upstream)
 - Role: this repository's `arkts-lsp` launcher composes the official HarmonyOS
   command-line tools and an extracted `ace-server` bundle into the DevEco-shaped
-  directory that `arkts-lsp-proxy` expects, then execs its `dist/index.js`. All
-  LSP proxying (initialize injection, the private `aceProject/*` mapping, hover
-  normalisation, symbol fallback, hvigor sync) is provided by that package.
+  directory that the proxy expects, then execs its built `dist/index.js`. All LSP
+  proxying (initialize injection, the private `aceProject/*` mapping, hover
+  normalisation, symbol fallback, hvigor sync) is provided by that project. This
+  repository only builds the fork and bundles its `dist/` in the release tarball.
 
 ```
 MIT License

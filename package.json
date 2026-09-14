@@ -1,7 +1,7 @@
 {
   "name": "arkts-lsp",
-  "version": "0.2.1",
-  "description": "One-click standalone ArkTS language server: bundles DevEco Studio's extracted ace-server and runs the upstream arkts-lsp-proxy against the official HarmonyOS command-line tools",
+  "version": "0.3.0",
+  "description": "One-click standalone ArkTS language server: bundles DevEco Studio's extracted ace-server and the vendored arkts-lsp-proxy fork (git submodule), and uses the official HarmonyOS command-line tools",
   "license": "MIT",
   "bin": {
     "arkts-lsp": "bin/arkts-lsp.mjs",
@@ -11,6 +11,8 @@
     "bin/",
     "extractor/",
     "ace-server-*/**/*",
+    "vendor/harmony_arkts_lsp_proxy/dist/",
+    "vendor/harmony_arkts_lsp_proxy/package.json",
     "NOTICE",
     "THIRD_PARTY_NOTICES.md",
     "README.md"
@@ -19,6 +21,8 @@
     "node": ">=18"
   },
   "scripts": {
+    "build:proxy": "bash scripts/build-proxy.sh",
+    "pretest": "bash scripts/build-proxy.sh",
     "test": "node --test test/*.test.mjs",
     "smoke": "node scripts/smoke.mjs",
     "extract": "node extractor/extract-ace-server.mjs"
@@ -34,9 +38,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/arkts-lsp/arkts-lsp.git"
+    "url": "git+https://github.com/PEMessage/arkts-lsp.git"
   },
   "dependencies": {
-    "arkts-lsp-proxy": "^0.1.8"
+    "json5": "^2.2.3",
+    "vscode-jsonrpc": "^8.2.1"
   }
 }

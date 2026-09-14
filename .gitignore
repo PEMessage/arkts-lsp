@@ -10,7 +10,6 @@ node_modules/
 *.tgz
 
 # Fetched sources (DevEco / command-line tools)
-/vendor/
 /prebuilts/
 /downloads/
 

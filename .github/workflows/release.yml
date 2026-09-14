@@ -31,10 +31,15 @@ jobs:
       version: ${{ steps.meta.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
+      - name: Build vendored proxy (git submodule)
+        run: bash scripts/build-proxy.sh
 
       - name: Read DevEco archive URL from the secret
         id: src

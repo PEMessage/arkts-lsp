@@ -1,0 +1,3 @@
+[submodule "vendor/harmony_arkts_lsp_proxy"]
+	path = vendor/harmony_arkts_lsp_proxy
+	url = https://github.com/PEMessage/harmony_arkts_lsp_proxy.git

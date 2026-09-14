@@ -1,9 +1,9 @@
 # NOTICE
 
-This repository contains **tooling only** (an extractor and a launcher),
-released under the MIT license (see `LICENSE`). It does **not** include any LSP
-proxy source: it depends on the upstream MIT-licensed `arkts-lsp-proxy` npm
-package and runs it unmodified.
+This repository contains **tooling only** (an extractor and a launcher) plus a
+vendored fork of `arkts-lsp-proxy` tracked as a git submodule
+(`vendor/harmony_arkts_lsp_proxy`), released under the MIT license (see
+`LICENSE`). It adds no proxy or language-server logic of its own.
 
 It does **not** contain, and must not be used to redistribute in source form,
 any Huawei proprietary software. The extractor produces a bundle of files
@@ -29,11 +29,12 @@ ensuring they have the right to use DevEco Studio and the HarmonyOS SDK.
 
 ## Attribution
 
-The language-server proxying in this project is provided by the MIT-licensed
+The language-server proxying in this project is provided by
 [HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)
-package (`arkts-lsp-proxy` on npm), used unmodified as a runtime dependency.
-This repository does not vendor or modify that code; it only prepares the
-environment that package expects and launches it. See
+(MIT), vendored here as the fork
+[PEMessage/harmony_arkts_lsp_proxy](https://github.com/PEMessage/harmony_arkts_lsp_proxy)
+in the `vendor/harmony_arkts_lsp_proxy` git submodule. This repository builds
+that fork and bundles its `dist/` output. See
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the full upstream notice.
 
 The Linux porting notes in

@@ -223,6 +223,10 @@ function resolveDevHome() {
 }
 
 function findProxyEntry() {
+  // Vendored fork (git submodule vendor/harmony_arkts_lsp_proxy), built to dist/.
+  const vendored = path.join(PKG_ROOT, 'vendor', 'harmony_arkts_lsp_proxy', 'dist', 'index.js');
+  if (isFile(vendored)) return vendored;
+  // Fall back to an npm-installed copy, if any.
   try {
     return require.resolve('arkts-lsp-proxy/dist/index.js');
   } catch {

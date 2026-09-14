@@ -3,7 +3,8 @@
 [English](README.md) | **中文**
 
 > 感谢 **[HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)**
-> —— 本项目所构建的 `arkts-lsp-proxy` npm 包。
+> —— 本项目所基于的 LSP 代理。本仓库以 git submodule 方式引入了它的一个 fork
+> ([PEMessage/harmony_arkts_lsp_proxy](https://github.com/PEMessage/harmony_arkts_lsp_proxy))。
 
 可独立运行的 ArkTS / ArkUI 语言服务器(Linux 优先,任何有 Node.js 的系统都能用)。
 
@@ -11,16 +12,15 @@
 
 | 组合 | 作用 |
 | --- | --- |
-| Huawei **DevEco Studio** 里的 `ace-server`(抽离出来) | 真正提供 ArkTS 语言智能 |
-| **[HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)** 的 `arkts-lsp-proxy` npm 包(原样使用) | 注入项目元数据,并在 LSP ↔ `ace-server` 私有协议之间转换 |
+| Huawei **DevEco Studio** 里的 `ace-server`(抽离出来,打进发布包) | 真正提供 ArkTS 语言智能 |
+| **[harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy) 的 fork**(git submodule,编译到 `dist/`) | 注入项目元数据,并在 LSP ↔ `ace-server` 私有协议之间转换 |
 | 你本机的**官方 HarmonyOS command-line tools** | SDK、Node.js、hvigor |
 
-本仓库只是一个**薄封装(thin wrapper)**:既不含代理代码,也不含语言服务代码,只有
-一个抽取器和一个小启动器,把上游 `arkts-lsp-proxy` 与 DevEco Studio 的 `ace-server` 接起来。
+本仓库只是一个**薄封装(thin wrapper)**:除抽取器和一个小启动器外,不添加任何自己的代理或语言服务代码。
 
 ```
 编辑器 ──stdio──► arkts-lsp (启动器,本仓库)
-                     └─ exec arkts-lsp-proxy (上游) ──spawn──► ace-server
+                     └─ exec 内置的 arkts-lsp-proxy ──spawn──► ace-server
 ```
 
 ## 前置条件
@@ -33,7 +33,7 @@
    ```sh
    npm install -g ./arkts-lsp-<version>.tgz
    ```
-   上游 `arkts-lsp-proxy` 作为依赖自动安装,DevEco 的 `ace-server` 已打进这个包里,
+   内置的 `arkts-lsp-proxy` fork(编译产物)和 DevEco 的 `ace-server` 都打进这个包里,
    不再需要单独下载。
 
 ## 用法
@@ -84,9 +84,22 @@ vim.lsp.enable('arkts')
 | `DEVECO_HOME` | 完整 DevEco Studio 安装;有效时直接使用。 |
 | `ARKTS_LSP_SYNC` | 上游代理:`auto`(默认)/ `off` / `force`。 |
 
+## 开发
+
+```sh
+git clone --recurse-submodules <本仓库>
+npm install
+npm test          # 先构建内置代理,再跑抽取器 + 启动器端到端测试
+```
+
+代理 fork 是位于 `vendor/harmony_arkts_lsp_proxy` 的 git submodule;用
+`npm run build:proxy`(或 `scripts/build-proxy.sh --force`)构建。给代理打补丁请在
+fork 自己的克隆里改,然后在这里更新 submodule 指针。
+
 ## 致谢
 
-- [HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)(MIT)—— LSP 代理,作为依赖使用。
+- [HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)(MIT)—— 原始 LSP 代理。
+- [PEMessage/harmony_arkts_lsp_proxy](https://github.com/PEMessage/harmony_arkts_lsp_proxy)—— 本仓库以 git submodule 引入的 fork。
 - [alex3236/devecostudio-linux](https://github.com/alex3236/devecostudio-linux)(BSD-2-Clause)—— Linux 移植笔记。
 
 ## 许可

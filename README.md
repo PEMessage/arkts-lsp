@@ -3,7 +3,9 @@
 **English** | [中文](README.zh-CN.md)
 
 > Thanks to **[HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)**
-> — the `arkts-lsp-proxy` npm package this project is built on.
+> — the LSP proxy this project is built on. This repo vendors a fork
+> ([PEMessage/harmony_arkts_lsp_proxy](https://github.com/PEMessage/harmony_arkts_lsp_proxy))
+> as a git submodule.
 
 A standalone ArkTS / ArkUI language server for Linux (and any OS with Node.js).
 
@@ -13,16 +15,15 @@ Studio IDE:
 | Combines | Role |
 | --- | --- |
 | Huawei **DevEco Studio** → its `ace-server` language server (extracted, bundled into the release) | does the actual ArkTS language intelligence |
-| **[HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)** → the `arkts-lsp-proxy` npm package (used unmodified) | injects project metadata and translates LSP ↔ `ace-server`'s private protocol |
+| A **fork of [harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)** (git submodule, built to `dist/`) | injects project metadata and translates LSP ↔ `ace-server`'s private protocol |
 | Your **official HarmonyOS command-line tools** | SDK, Node.js runtime, hvigor |
 
-This repository is a **thin wrapper** around the upstream `arkts-lsp-proxy` and
-DevEco Studio's `ace-server`: it contains no proxy or language-server code, only
-an extractor and a small launcher that wire them together.
+This repository is a **thin wrapper**: it adds no proxy or language-server logic
+of its own beyond an extractor and a small launcher.
 
 ```
 editor ──stdio──► arkts-lsp (launcher, this repo)
-                      └─ execs arkts-lsp-proxy (upstream) ──spawns──► ace-server
+                      └─ execs the vendored arkts-lsp-proxy ──spawns──► ace-server
 ```
 
 ## Requirements
@@ -35,8 +36,8 @@ editor ──stdio──► arkts-lsp (launcher, this repo)
    ```sh
    npm install -g ./arkts-lsp-<version>.tgz
    ```
-   That is all you need; `arkts-lsp-proxy` (upstream) and a DevEco `ace-server`
-   build are pulled from / bundled inside this tarball.
+   That is all you need: the vendored `arkts-lsp-proxy` fork and a DevEco
+   `ace-server` build are bundled inside this tarball.
 
 ## Usage
 
@@ -88,9 +89,22 @@ A ready-to-copy version is in [`examples/nvim/arkts.lua`](examples/nvim/arkts.lu
 | `DEVECO_HOME` | A full DevEco Studio install; used as-is when valid. |
 | `ARKTS_LSP_SYNC` | Upstream proxy: `auto` (default) / `off` / `force`. |
 
+## Development
+
+```sh
+git clone --recurse-submodules <this repo>
+npm install
+npm test          # builds the vendored proxy, then extractor + launcher e2e tests
+```
+
+The proxy fork is a git submodule at `vendor/harmony_arkts_lsp_proxy`; build it
+with `npm run build:proxy` (or `scripts/build-proxy.sh --force`). Patch the
+proxy in a separate clone of the fork and commit the new submodule pointer here.
+
 ## Credits
 
-- [HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy) (MIT) — the LSP proxy, used as a dependency.
+- [HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy) (MIT) — the original LSP proxy.
+- [PEMessage/harmony_arkts_lsp_proxy](https://github.com/PEMessage/harmony_arkts_lsp_proxy) — the fork vendored here as a git submodule.
 - [alex3236/devecostudio-linux](https://github.com/alex3236/devecostudio-linux) (BSD-2-Clause) — Linux porting notes.
 
 ## License

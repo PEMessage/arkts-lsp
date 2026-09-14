@@ -54,6 +54,9 @@ command -v npm >/dev/null || die "npm is required"
 VERSION="$(node -p "require('./package.json').version")"
 [[ -n "$TAG" ]] || TAG="v$VERSION"
 
+log "preparing vendored proxy (git submodule)"
+bash "$ROOT/scripts/build-proxy.sh"
+
 log "installing dependencies"
 npm ci
 
