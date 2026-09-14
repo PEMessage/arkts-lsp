@@ -83,7 +83,7 @@ BUNDLED=0
 if [[ -n "$FROM" ]]; then
   [[ -e "$FROM" ]] || die "source not found: $FROM"
   log "extracting ace-server from $FROM (bundled into the package)"
-  node extractor/extract-ace-server.mjs --from "$FROM" --out "$ROOT"
+  node extractor/extract-ace-server.mjs --from "$FROM" --out "$ROOT" --force
   BUNDLED=1
 fi
 
