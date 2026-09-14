@@ -272,7 +272,9 @@ function detectVersion(contentsRoot) {
     if (file.endsWith('.json')) {
       const data = readJsonSafe(file);
       if (data) {
-        const v = data.buildNumber || data.version || data.build;
+        // Prefer the marketing version ("26.0.0.821") over the internal
+        // buildNumber ("261.23567.138.36.2600821").
+        const v = data.version || data.buildNumber || data.build;
         if (v) return { version: String(v), source: file };
       }
     } else {

@@ -25,7 +25,7 @@ function makeFakeDevEco(tmp) {
   fs.mkdirSync(path.join(contents, 'Resources'), { recursive: true });
   fs.writeFileSync(
     path.join(contents, 'Resources', 'product-info.json'),
-    JSON.stringify({ name: 'DevEco Studio', version: '26.0.0.821', buildNumber: '26.0.0.821' }),
+    JSON.stringify({ name: 'DevEco Studio', version: '26.0.0.821', buildNumber: '261.23567.138.36.2600821' }),
   );
   return path.join(tmp, 'DevEco-Studio.app');
 }
