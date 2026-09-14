@@ -5,22 +5,17 @@ name: Release
 # assets and the tag are always overwritten.
 #
 # Publishes:
-#   1. arkts-lsp-<version>.tgz            — this repo's one-click launcher
-#      (npm pack; pulls arkts-lsp-proxy as a dependency). Always built.
-#   2. ace-server-<deveco-version>.tar.gz — the extracted language server,
-#      built only when a DevEco Studio archive is supplied.
+#   arkts-lsp-<version>.tgz            — the one-click launcher, with ace-server
+#                                        bundled inside (one download is enough).
+#   ace-server-<deveco-version>.tar.gz — the standalone language server too.
 #
 # The DevEco archive is Huawei proprietary software and is *not* stored in git.
-# Provide it via the `deveco_url` input or the DEVECO_ARCHIVE_URL repository
-# secret.
+# Its (signed, expiring) URL comes from the DEVECO_ARCHIVE_URL repository
+# secret. Without it, only the launcher is built.
 
 on:
   workflow_dispatch:
     inputs:
-      deveco_url:
-        description: 'URL of devecostudio-mac-*.zip (or .dmg). Leave empty to only release the launcher.'
-        required: false
-        type: string
       tag:
         description: 'Release tag. Default: nightly. An existing tag/release is deleted and recreated.'
         required: false
@@ -30,7 +25,7 @@ permissions:
   contents: write
 
 jobs:
-  package:
+  build:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.meta.outputs.version }}
@@ -40,63 +35,62 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - name: Pack the launcher
-        run: |
-          mkdir -p dist-assets
-          npm pack --pack-destination dist-assets
-      - id: meta
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: launcher-assets
-          path: dist-assets/*
 
-  ace-server:
-    runs-on: ubuntu-latest
-    needs: package
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Resolve DevEco archive URL
+      - name: Read DevEco archive URL from the secret
         id: src
         env:
-          INPUT_URL: ${{ inputs.deveco_url }}
           SECRET_URL: ${{ secrets.DEVECO_ARCHIVE_URL }}
         run: |
-          url="${INPUT_URL:-$SECRET_URL}"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          if [ -z "$url" ]; then
-            echo "No DevEco archive supplied — skipping ace-server extraction."
+          echo "url=$SECRET_URL" >> "$GITHUB_OUTPUT"
+          if [ -z "$SECRET_URL" ]; then
+            echo "DEVECO_ARCHIVE_URL is not set — building the launcher only."
           fi
+
       - name: Install extraction tools
         if: steps.src.outputs.url != ''
         run: sudo apt-get update && sudo apt-get install -y p7zip-full unzip
-      - name: Download and extract ace-server
+
+      - name: Extract ace-server into the package
         if: steps.src.outputs.url != ''
         env:
           URL: ${{ steps.src.outputs.url }}
         run: |
-          mkdir -p downloads dist-assets
+          mkdir -p downloads
           file="downloads/$(basename "${URL%%\?*}")"
-          echo "Downloading $URL"
+          echo "Downloading DevEco archive"
           curl -fL --retry 3 -o "$file" "$URL"
-          node extractor/extract-ace-server.mjs --from "$file" --out dist-assets
-      - uses: actions/upload-artifact@v4
+          # --out . stages ace-server-<ver>/ in the repo root so `npm pack` below
+          # bundles it into the launcher tarball.
+          node extractor/extract-ace-server.mjs --from "$file" --out .
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Pack the launcher (with bundled ace-server)
+        run: |
+          mkdir -p dist-assets
+          npm pack --pack-destination dist-assets
+
+      - name: Collect standalone ace-server assets
         if: steps.src.outputs.url != ''
+        run: |
+          mv ace-server-*.tar.gz dist-assets/ 2>/dev/null || true
+          mv ace-server-*.tar.gz.sha256 dist-assets/ 2>/dev/null || true
+          [ -f manifest.json ] && mv manifest.json dist-assets/manifest.json || true
+          # The staged tree is now inside the npm tarball.
+          rm -rf ace-server-*/
+
+      - id: meta
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: ace-server-assets
-          path: |
-            dist-assets/ace-server-*.tar.gz
-            dist-assets/ace-server-*.tar.gz.sha256
-            dist-assets/manifest.json
+          name: release-assets
+          path: dist-assets/**
 
   release:
     runs-on: ubuntu-latest
-    needs: [package, ace-server]
+    needs: build
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -118,13 +112,12 @@ jobs:
             echo "Deleting existing release and tag: $TAG"
             gh release delete "$TAG" --yes --cleanup-tag
           else
-            # A tag may exist without a release.
             git push origin ":refs/tags/$TAG" 2>/dev/null || true
           fi
       - name: Create release
         env:
           TAG: ${{ steps.tag.outputs.tag }}
-          VERSION: ${{ needs.package.outputs.version }}
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
           gh release create "$TAG" assets/* \
             --target "$GITHUB_SHA" \
@@ -133,14 +126,11 @@ jobs:
 
           ## Assets
 
-          - \`arkts-lsp-<version>.tgz\` — the one-click launcher (\`npm i -g\` / \`npx\`).
-            It pulls the upstream \`arkts-lsp-proxy\` dependency automatically.
-          - \`ace-server-<deveco-version>.tar.gz\` — Huawei's ArkTS language server,
-            extracted from DevEco Studio. Extract it and point the launcher at it:
-
-            \`\`\`sh
-            tar -xzf ace-server-<version>.tar.gz -C ~/.local/share/arkts-lsp
-            \`\`\`
+          - \`arkts-lsp-<version>.tgz\` — one download; bundles the launcher,
+            the extractor, the upstream \`arkts-lsp-proxy\` dependency and a
+            DevEco \`ace-server\` build.
+          - \`ace-server-<deveco-version>.tar.gz\` — the standalone language
+            server, if you prefer to manage it yourself.
 
           > \`ace-server\` is Huawei proprietary software and remains subject to
           > DevEco Studio's license terms. See \`NOTICE\` in the repository."

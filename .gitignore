@@ -5,6 +5,7 @@ node_modules/
 # Extractor / release output
 /dist-ace-server/
 /dist-assets/
+/ace-server-*/
 *.tar.gz
 *.tgz
 

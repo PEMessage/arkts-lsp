@@ -29,15 +29,12 @@
    ```sh
    export PATH="/path/to/commandline-tools/bin:$PATH"
    ```
-2. **`arkts-lsp`**(来自本仓库 release):
+2. **`arkts-lsp`** —— 只下载一个就够,里面已经包含 `ace-server`:
    ```sh
-   npm install -g ./arkts-lsp-<version>.tgz   # 会自动依赖安装 arkts-lsp-proxy
+   npm install -g ./arkts-lsp-<version>.tgz
    ```
-3. **`ace-server`**:从 DevEco 包抽取,或用 release 里的 bundle:
-   ```sh
-   arkts-lsp setup --from ~/Downloads/devecostudio-mac.zip
-   # 或:tar -xzf ace-server-<version>.tar.gz -C ~/.local/share/arkts-lsp
-   ```
+   上游 `arkts-lsp-proxy` 作为依赖自动安装,DevEco 的 `ace-server` 已打进这个包里,
+   不再需要单独下载。
 
 ## 用法
 
@@ -46,9 +43,16 @@ arkts-lsp doctor     # 看环境里有什么、缺什么
 arkts-lsp            # 在 stdio 上跑 LSP(编辑器会自动调用)
 ```
 
-启动时,启动器会找到 `ace-server` bundle 和 command-line tools,拼出一个 DevEco 形状的
-home(`~/.local/share/arkts-lsp/dev-home/`,全是软链接:`plugins`、`sdk`、
-`tools/node`、`tools/hvigor`),然后用 `DEVECO_HOME` 指向它运行上游代理。
+启动时,启动器会找到 `ace-server`(包内自带,或你单独解压的 bundle)和 command-line
+tools,拼出一个 DevEco 形状的 home(`~/.local/share/arkts-lsp/dev-home/`,全是软链接:
+`plugins`、`sdk`、`tools/node`、`tools/hvigor`),然后用 `DEVECO_HOME` 指向它运行上游代理。
+
+想用别的 `ace-server` 版本:
+
+```sh
+arkts-lsp setup --from ~/Downloads/devecostudio-mac.zip
+# 或:tar -xzf ace-server-<version>.tar.gz -C ~/.local/share/arkts-lsp
+```
 
 ### Neovim 0.11+(`vim.lsp.config`)
 

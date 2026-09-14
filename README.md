@@ -12,7 +12,7 @@ Studio IDE:
 
 | Combines | Role |
 | --- | --- |
-| Huawei **DevEco Studio** → its `ace-server` language server (extracted) | does the actual ArkTS language intelligence |
+| Huawei **DevEco Studio** → its `ace-server` language server (extracted, bundled into the release) | does the actual ArkTS language intelligence |
 | **[HelloiOS2014/harmony_arkts_lsp_proxy](https://github.com/HelloiOS2014/harmony_arkts_lsp_proxy)** → the `arkts-lsp-proxy` npm package (used unmodified) | injects project metadata and translates LSP ↔ `ace-server`'s private protocol |
 | Your **official HarmonyOS command-line tools** | SDK, Node.js runtime, hvigor |
 
@@ -31,15 +31,12 @@ editor ──stdio──► arkts-lsp (launcher, this repo)
    ```sh
    export PATH="/path/to/commandline-tools/bin:$PATH"
    ```
-2. **`arkts-lsp`** from this repo's releases:
+2. **`arkts-lsp`** — one download, already includes `ace-server`:
    ```sh
-   npm install -g ./arkts-lsp-<version>.tgz   # pulls arkts-lsp-proxy as a dependency
+   npm install -g ./arkts-lsp-<version>.tgz
    ```
-3. **`ace-server`**, either extracted from a DevEco archive or from the release bundle:
-   ```sh
-   arkts-lsp setup --from ~/Downloads/devecostudio-mac.zip
-   # or: tar -xzf ace-server-<version>.tar.gz -C ~/.local/share/arkts-lsp
-   ```
+   That is all you need; `arkts-lsp-proxy` (upstream) and a DevEco `ace-server`
+   build are pulled from / bundled inside this tarball.
 
 ## Usage
 
@@ -48,10 +45,18 @@ arkts-lsp doctor     # show what was found / what is missing
 arkts-lsp            # run the LSP server on stdio (editors spawn this)
 ```
 
-On start the launcher finds your `ace-server` bundle and the command-line tools,
-assembles a DevEco-shaped home (`~/.local/share/arkts-lsp/dev-home/`, just
-symlinks: `plugins`, `sdk`, `tools/node`, `tools/hvigor`), and runs the upstream
-proxy with `DEVECO_HOME` pointing at it.
+On start the launcher finds `ace-server` (bundled in the package, or a separate
+bundle you extracted) plus the command-line tools, assembles a DevEco-shaped home
+(`~/.local/share/arkts-lsp/dev-home/`, just symlinks: `plugins`, `sdk`,
+`tools/node`, `tools/hvigor`), and runs the upstream proxy with `DEVECO_HOME`
+pointing at it.
+
+To use a different `ace-server` build than the bundled one:
+
+```sh
+arkts-lsp setup --from ~/Downloads/devecostudio-mac.zip
+# or: tar -xzf ace-server-<version>.tar.gz -C ~/.local/share/arkts-lsp
+```
 
 ### Neovim 0.11+ (`vim.lsp.config`)
 

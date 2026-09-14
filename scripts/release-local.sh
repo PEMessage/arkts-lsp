@@ -65,13 +65,38 @@ fi
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
+if [[ -z "$FROM" ]]; then
+  # Fall back to the URL committed in ./deveco.url (same source the CI uses).
+  _url="$(sed -e 's/#.*$//' "$ROOT/deveco.url" 2>/dev/null | sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' | head -n1 || true)"
+  if [[ -n "$_url" ]]; then
+    command -v curl >/dev/null || die "curl is required to download the DevEco archive"
+    mkdir -p downloads
+    FROM="downloads/$(basename "${_url%%\?*}")"
+    log "downloading DevEco archive from deveco.url -> $FROM"
+    curl -fL --retry 3 -o "$FROM" "$_url"
+  fi
+fi
+
+# Extract ace-server into the repo root BEFORE packing, so `npm pack` bundles
+# it into the launcher tarball (one download installs everything).
+BUNDLED=0
+if [[ -n "$FROM" ]]; then
+  [[ -e "$FROM" ]] || die "source not found: $FROM"
+  log "extracting ace-server from $FROM (bundled into the package)"
+  node extractor/extract-ace-server.mjs --from "$FROM" --out "$ROOT"
+  BUNDLED=1
+fi
+
 log "packing the launcher"
 npm pack --pack-destination "$OUT"
 
-if [[ -n "$FROM" ]]; then
-  [[ -e "$FROM" ]] || die "source not found: $FROM"
-  log "extracting ace-server from $FROM"
-  node extractor/extract-ace-server.mjs --from "$FROM" --out "$OUT"
+if [[ "$BUNDLED" == "1" ]]; then
+  # Also publish the standalone ace-server tarball and the extractor manifest.
+  mv "$ROOT"/ace-server-*.tar.gz "$OUT"/ 2>/dev/null || true
+  mv "$ROOT"/ace-server-*.tar.gz.sha256 "$OUT"/ 2>/dev/null || true
+  [[ -f "$ROOT/manifest.json" ]] && mv "$ROOT/manifest.json" "$OUT"/manifest.json
+  # Drop the staged directory: its contents are now inside the npm tarball.
+  rm -rf "$ROOT"/ace-server-*/
 fi
 
 log "release assets:"

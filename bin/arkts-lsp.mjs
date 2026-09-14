@@ -98,6 +98,20 @@ function findBundle() {
     return { root: null, source: `ARKTS_ACE_SERVER_HOME=${explicit} (invalid)` };
   }
 
+  // ace-server bundled inside this package, so one download is enough.
+  if (isFile(path.join(PKG_ROOT, ACE_ENTRY))) {
+    return { root: PKG_ROOT, source: 'bundled with the package' };
+  }
+  if (isDir(PKG_ROOT)) {
+    for (const entry of fs.readdirSync(PKG_ROOT, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const sub = path.join(PKG_ROOT, entry.name);
+      if (isFile(path.join(sub, ACE_ENTRY))) {
+        return { root: sub, source: `bundled with the package (${entry.name})` };
+      }
+    }
+  }
+
   const base = bundleBase();
   const candidates = [];
   if (isDir(base)) {
