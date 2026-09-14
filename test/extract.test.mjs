@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { selectDmgTargets } from '../extractor/extract-ace-server.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
@@ -28,6 +29,30 @@ function makeFakeDevEco(tmp) {
   );
   return path.join(tmp, 'DevEco-Studio.app');
 }
+
+test('selectDmgTargets picks exact paths from a 7z listing', () => {
+  const paths = [
+    'DevEco-Studio/DevEco-Studio.app/Contents/Resources/product-info.json',
+    'DevEco-Studio/DevEco-Studio.app/Contents/Resources/build.txt',
+    'DevEco-Studio/DevEco-Studio.app/Contents/plugins/openharmony/ace-server/out/index.js',
+    'DevEco-Studio/DevEco-Studio.app/Contents/plugins/openharmony/ace-server/package.json',
+    'DevEco-Studio/DevEco-Studio.app/Contents/plugins/openharmony/ets-loader/lib/a.js',
+  ];
+  const { aceDir, productInfo, buildTxt, targets } = selectDmgTargets(paths);
+  assert.equal(aceDir, 'DevEco-Studio/DevEco-Studio.app/Contents/plugins/openharmony/ace-server');
+  assert.equal(productInfo, 'DevEco-Studio/DevEco-Studio.app/Contents/Resources/product-info.json');
+  assert.equal(buildTxt, 'DevEco-Studio/DevEco-Studio.app/Contents/Resources/build.txt');
+  assert.deepEqual(targets, [aceDir, productInfo, buildTxt]);
+});
+
+test('selectDmgTargets handles a directory entry and an empty listing', () => {
+  const withDirEntry = selectDmgTargets(['App.app/Contents/plugins/openharmony/ace-server']);
+  assert.equal(withDirEntry.aceDir, 'App.app/Contents/plugins/openharmony/ace-server');
+
+  const empty = selectDmgTargets([]);
+  assert.equal(empty.aceDir, null);
+  assert.deepEqual(empty.targets, []);
+});
 
 test('extractor stages a faithful IDE layout and packages a tarball', (t) => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'arkts-extract-'));

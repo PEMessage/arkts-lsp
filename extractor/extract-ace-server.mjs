@@ -28,8 +28,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 const ACE_REL_ENTRY = path.join('plugins', 'openharmony', 'ace-server', 'out', 'index.js');
+const ACE_DIR_SUFFIX = 'plugins/openharmony/ace-server';
 const OHOS_PLUGIN_DIR = path.join('plugins', 'openharmony');
 
 function log(...args) {
@@ -164,10 +166,19 @@ function run(cmd, args, options = {}) {
   return r;
 }
 
-function runCapture(cmd, args) {
-  const r = spawnSync(cmd, args, { encoding: 'utf8' });
+function runCapture(cmd, args, options = {}) {
+  // A DMG listing can be tens of MB, so allow a generous buffer.
+  const r = spawnSync(cmd, args, { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024, ...options });
   if (r.error) return null;
   return r.stdout ?? '';
+}
+
+/** Locate a usable 7-Zip binary, or fail with an actionable message. */
+function pick7z() {
+  for (const candidate of ['7z', '7zz', '7za']) {
+    if (hasCommand(candidate)) return candidate;
+  }
+  fail('extracting a .dmg needs 7z (p7zip / 7-Zip). Install it, or run this on macOS (hdiutil).');
 }
 
 function mkdtemp(prefix) {
@@ -282,15 +293,26 @@ function sanitizeVersion(v) {
 // Source acquisition
 // ---------------------------------------------------------------------------
 
+/**
+ * From the `Path = ...` entries of `7z l -slt <dmg>`, choose the exact archive
+ * paths to extract for ace-server. Exported for unit tests.
+ */
+export function selectDmgTargets(innerPaths) {
+  const aceDir =
+    innerPaths.find((p) => p === ACE_DIR_SUFFIX || p.endsWith(`/${ACE_DIR_SUFFIX}`)) ??
+    (() => {
+      const file = innerPaths.find((p) => p.includes(`/${ACE_DIR_SUFFIX}/`));
+      if (!file) return null;
+      return file.slice(0, file.indexOf(`/${ACE_DIR_SUFFIX}/`) + ACE_DIR_SUFFIX.length + 1);
+    })();
+  const productInfo = innerPaths.find((p) => /\/Resources\/product-info\.json$/.test(p));
+  const buildTxt = innerPaths.find((p) => /\/Resources\/build\.txt$/.test(p));
+  return { aceDir, productInfo, buildTxt, targets: [aceDir, productInfo, buildTxt].filter(Boolean) };
+}
+
 /** Extract a .dmg into a temp dir and return its contents. */
 function dmgToContents(dmgPath) {
   const tmp = mkdtemp('arkts-ace-dmg-');
-  const patterns = [
-    `*plugins/openharmony/ace-server*`,
-    `*Resources/product-info.json`,
-    `*Resources/build.txt`,
-    `*product-info.json`,
-  ];
 
   if (process.platform === 'darwin' && hasCommand('hdiutil')) {
     log(`Mounting ${dmgPath} with hdiutil ...`);
@@ -309,12 +331,44 @@ function dmgToContents(dmgPath) {
     }
   }
 
-  if (!hasCommand('7z') && !hasCommand('7zz') && !hasCommand('7za')) {
-    fail('extracting a .dmg needs 7z (p7zip / 7-Zip). Install it, or run this on macOS (hdiutil).');
-  }
-  const sevenZip = hasCommand('7z') ? '7z' : hasCommand('7zz') ? '7zz' : '7za';
+  const sevenZip = pick7z();
   log(`Extracting ${dmgPath} with ${sevenZip} ...`);
-  run(sevenZip, ['x', '-y', `-o${tmp}`, dmgPath, ...patterns]);
+
+  // 7-Zip's wildcard filters do NOT recurse into the DMG's HFS tree, so list
+  // first and extract exact paths. Known-safe fallbacks follow in case a given
+  // 7-Zip build cannot list the nested HFS.
+  const innerPaths = listArchivePaths(sevenZip, dmgPath);
+  const { targets } = selectDmgTargets(innerPaths);
+
+  const run7z = (switches, files, label) => {
+    log(`7z extract (${label}): ${[...switches, ...files].join(' ')}`);
+    const r = spawnSync(sevenZip, ['x', '-y', `-o${tmp}`, ...switches, dmgPath, ...files], { stdio: 'inherit' });
+    if (r.error) fail(`failed to run ${sevenZip}: ${r.error.message}`);
+    return r.status === 0;
+  };
+
+  if (targets.length > 0) {
+    run7z([], targets, 'exact paths from listing');
+  }
+
+  if (!searchForAceServer(tmp)) {
+    log(`listing gave ${innerPaths.length} entries but no ace-server; trying recursive wildcard`);
+    run7z(['-r'], [`*/${ACE_DIR_SUFFIX}/*`, '*Resources/product-info.json', '*Resources/build.txt', '*product-info.json'], 'recursive wildcard');
+  }
+
+  if (!searchForAceServer(tmp)) {
+    // Last resort: the layout used by the DevEco macOS DMG (see
+    // alex3236/devecostudio-linux). Exact directory paths work even when
+    // wildcards do not.
+    for (const prefix of ['DevEco-Studio/DevEco-Studio.app/Contents', 'DevEco-Studio.app/Contents']) {
+      if (searchForAceServer(tmp)) break;
+      run7z(
+        [],
+        [`${prefix}/plugins/openharmony/ace-server`, `${prefix}/Resources/product-info.json`, `${prefix}/Resources/build.txt`],
+        `known prefix ${prefix}`,
+      );
+    }
+  }
 
   const found = searchForAceServer(tmp);
   if (!found) fail('ace-server not found after extracting the DMG');
@@ -323,6 +377,16 @@ function dmgToContents(dmgPath) {
     aceServerDir: found.aceServerDir,
     cleanup: () => rimraf(tmp),
   };
+}
+
+/** Read the `Path = ...` entries from `7z l -slt <archive>`. */
+function listArchivePaths(sevenZip, archive) {
+  const listing = runCapture(sevenZip, ['l', '-slt', archive]);
+  if (!listing) return [];
+  return listing
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('Path = '))
+    .map((line) => line.slice('Path = '.length).trim());
 }
 
 function zipToDmg(zipPath) {
@@ -642,4 +706,6 @@ function countFiles(root) {
   return n;
 }
 
-main();
+const invokedDirectly =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) main();
