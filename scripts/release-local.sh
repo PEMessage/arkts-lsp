@@ -87,12 +87,17 @@ command -v gh >/dev/null || die "gh CLI is required to publish (or use --dry-run
 GH_ARGS=()
 [[ -n "$REPO" ]] && GH_ARGS+=(--repo "$REPO")
 
+# Only upload files: $OUT also contains the staged ace-server directory, and
+# `gh release upload` errors on directories.
+ASSETS=()
+while IFS= read -r f; do ASSETS+=("$f"); done < <(find "$OUT" -maxdepth 1 -type f | sort)
+
 if gh release view "$TAG" "${GH_ARGS[@]}" >/dev/null 2>&1; then
   log "uploading assets to existing release $TAG"
-  gh release upload "$TAG" "$OUT"/* "${GH_ARGS[@]}" --clobber
+  gh release upload "$TAG" "${ASSETS[@]}" "${GH_ARGS[@]}" --clobber
 else
   log "creating release $TAG"
-  gh release create "$TAG" "$OUT"/* \
+  gh release create "$TAG" "${ASSETS[@]}" \
     "${GH_ARGS[@]}" \
     --title "$TAG" \
     --generate-notes \
