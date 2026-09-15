@@ -126,16 +126,29 @@ GH_ARGS=()
 ASSETS=()
 while IFS= read -r f; do ASSETS+=("$f"); done < <(find "$OUT" -maxdepth 1 -type f | sort)
 
+# Version-less, stable notes/title (never mention the package version).
+NOTES="Built from $(git rev-parse --short HEAD 2>/dev/null || echo unknown).
+
+## Assets
+
+- \`arkts-lsp.tgz\` — one download; bundles the launcher, the extractor, the
+  vendored \`arkts-lsp-proxy\` and a DevEco \`ace-server\` build.
+- \`ace-server.tar.gz\` — the standalone language server, if you prefer to
+  manage it yourself.
+
+> \`ace-server\` is Huawei proprietary software and remains subject to DevEco
+> Studio's license terms. See \`NOTICE\` in the repository."
+
 if gh release view "$TAG" "${GH_ARGS[@]}" >/dev/null 2>&1; then
   log "uploading assets to existing release $TAG"
   gh release upload "$TAG" "${ASSETS[@]}" "${GH_ARGS[@]}" --clobber
+  gh release edit "$TAG" "${GH_ARGS[@]}" --title "$TAG" --notes "$NOTES"
 else
   log "creating release $TAG"
   gh release create "$TAG" "${ASSETS[@]}" \
     "${GH_ARGS[@]}" \
     --title "$TAG" \
-    --generate-notes \
-    --notes "ace-server is Huawei proprietary software; see NOTICE."
+    --notes "$NOTES"
 fi
 
 log "done: https://github.com/${REPO:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}/releases/tag/$TAG"
