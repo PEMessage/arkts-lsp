@@ -31,7 +31,7 @@
    ```
 2. **`arkts-lsp`** —— 只下载一个就够,里面已经包含 `ace-server`:
    ```sh
-   npm install -g ./arkts-lsp-<version>.tgz
+   npm install -g ./arkts-lsp.tgz
    ```
    内置的 `arkts-lsp-proxy` fork(编译产物)和 DevEco 的 `ace-server` 都打进这个包里,
    不再需要单独下载。
@@ -51,7 +51,7 @@ tools,拼出一个 DevEco 形状的 home(`~/.local/share/arkts-lsp/dev-home/`,�
 
 ```sh
 arkts-lsp setup --from ~/Downloads/devecostudio-mac.zip
-# 或:tar -xzf ace-server-<version>.tar.gz -C ~/.local/share/arkts-lsp
+# 或:tar -xzf ace-server.tar.gz -C ~/.local/share/arkts-lsp
 ```
 
 ### Neovim 0.11+(`vim.lsp.config`)

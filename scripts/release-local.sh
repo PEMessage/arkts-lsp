@@ -92,12 +92,18 @@ fi
 
 log "packing the launcher"
 npm pack --pack-destination "$OUT"
+# Stable, version-less asset name for nightly releases.
+mv "$OUT"/arkts-lsp-*.tgz "$OUT"/arkts-lsp.tgz 2>/dev/null || true
 
 if [[ "$BUNDLED" == "1" ]]; then
-  # Also publish the standalone ace-server tarball and the extractor manifest.
-  mv "$ROOT"/ace-server-*.tar.gz "$OUT"/ 2>/dev/null || true
-  mv "$ROOT"/ace-server-*.tar.gz.sha256 "$OUT"/ 2>/dev/null || true
+  # Also publish the standalone ace-server tarball and the extractor manifest,
+  # under stable version-less names too.
+  mv "$ROOT"/ace-server-*.tar.gz "$OUT"/ace-server.tar.gz 2>/dev/null || true
   [[ -f "$ROOT/manifest.json" ]] && mv "$ROOT/manifest.json" "$OUT"/manifest.json
+  rm -f "$ROOT"/ace-server-*.tar.gz.sha256
+  if [[ -f "$OUT/ace-server.tar.gz" ]]; then
+    (cd "$OUT" && sha256sum ace-server.tar.gz > ace-server.tar.gz.sha256)
+  fi
   # Drop the staged directory: its contents are now inside the npm tarball.
   rm -rf "$ROOT"/ace-server-*/
 fi

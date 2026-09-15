@@ -4,10 +4,10 @@ name: Release
 # default: an existing release/tag with that name is deleted first, so the
 # assets and the tag are always overwritten.
 #
-# Publishes:
-#   arkts-lsp-<version>.tgz            — the one-click launcher, with ace-server
-#                                        bundled inside (one download is enough).
-#   ace-server-<deveco-version>.tar.gz — the standalone language server too.
+# Publishes stable, version-less assets:
+#   arkts-lsp.tgz      — the one-click launcher, with ace-server bundled inside
+#                        (one download is enough).
+#   ace-server.tar.gz  — the standalone language server too.
 #
 # The DevEco archive is Huawei proprietary software and is *not* stored in git.
 # Its (signed, expiring) URL comes from the DEVECO_ARCHIVE_URL repository
@@ -27,8 +27,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.meta.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -75,18 +73,19 @@ jobs:
         run: |
           mkdir -p dist-assets
           npm pack --pack-destination dist-assets
+          # Stable, version-less asset name.
+          mv dist-assets/arkts-lsp-*.tgz dist-assets/arkts-lsp.tgz
 
       - name: Collect standalone ace-server assets
         if: steps.src.outputs.url != ''
         run: |
-          mv ace-server-*.tar.gz dist-assets/ 2>/dev/null || true
-          mv ace-server-*.tar.gz.sha256 dist-assets/ 2>/dev/null || true
+          mv ace-server-*.tar.gz dist-assets/ace-server.tar.gz 2>/dev/null || true
           [ -f manifest.json ] && mv manifest.json dist-assets/manifest.json || true
+          if [ -f dist-assets/ace-server.tar.gz ]; then
+            (cd dist-assets && sha256sum ace-server.tar.gz > ace-server.tar.gz.sha256)
+          fi
           # The staged tree is now inside the npm tarball.
           rm -rf ace-server-*/
-
-      - id: meta
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -122,20 +121,18 @@ jobs:
       - name: Create release
         env:
           TAG: ${{ steps.tag.outputs.tag }}
-          VERSION: ${{ needs.build.outputs.version }}
         run: |
           gh release create "$TAG" assets/* \
             --target "$GITHUB_SHA" \
             --title "$TAG" \
-            --notes "arkts-lsp \`${VERSION}\` (built from ${GITHUB_SHA}).
+            --notes "Built from ${GITHUB_SHA}.
 
           ## Assets
 
-          - \`arkts-lsp-<version>.tgz\` — one download; bundles the launcher,
-            the extractor, the upstream \`arkts-lsp-proxy\` dependency and a
-            DevEco \`ace-server\` build.
-          - \`ace-server-<deveco-version>.tar.gz\` — the standalone language
-            server, if you prefer to manage it yourself.
+          - \`arkts-lsp.tgz\` — one download; bundles the launcher, the extractor,
+            the vendored \`arkts-lsp-proxy\` and a DevEco \`ace-server\` build.
+          - \`ace-server.tar.gz\` — the standalone language server, if you prefer
+            to manage it yourself.
 
           > \`ace-server\` is Huawei proprietary software and remains subject to
           > DevEco Studio's license terms. See \`NOTICE\` in the repository."

@@ -34,7 +34,7 @@ editor ──stdio──► arkts-lsp (launcher, this repo)
    ```
 2. **`arkts-lsp`** — one download, already includes `ace-server`:
    ```sh
-   npm install -g ./arkts-lsp-<version>.tgz
+   npm install -g ./arkts-lsp.tgz
    ```
    That is all you need: the vendored `arkts-lsp-proxy` fork and a DevEco
    `ace-server` build are bundled inside this tarball.
@@ -56,7 +56,7 @@ To use a different `ace-server` build than the bundled one:
 
 ```sh
 arkts-lsp setup --from ~/Downloads/devecostudio-mac.zip
-# or: tar -xzf ace-server-<version>.tar.gz -C ~/.local/share/arkts-lsp
+# or: tar -xzf ace-server.tar.gz -C ~/.local/share/arkts-lsp
 ```
 
 ### Neovim 0.11+ (`vim.lsp.config`)
