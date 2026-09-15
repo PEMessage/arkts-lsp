@@ -1,6 +1,6 @@
 {
   "name": "arkts-lsp",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "One-click standalone ArkTS language server: bundles DevEco Studio's extracted ace-server and the vendored arkts-lsp-proxy fork (git submodule), and uses the official HarmonyOS command-line tools",
   "license": "MIT",
   "bin": {
